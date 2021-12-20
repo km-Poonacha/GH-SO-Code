@@ -65,6 +65,13 @@ def run_query(user_row,user_xl):
     except:
         print("Error getting starting cursor")
         print(req_json)
+        temp_row = list()
+        temp_row.append("DELETED")
+        temp_row.append("DELETED")
+        temp_row.append("DELETED")
+        temp_row.append("DELETED")
+        user_row_temp= user_row.append(pd.Series(temp_row), ignore_index = True)
+        appendrowindf(user_xl, user_row_temp) 
         return 404
     
     end = False
@@ -133,6 +140,13 @@ def run_query(user_row,user_xl):
                 sleep(60)           
         except:
             print("Error running graphql")
+            temp_row = list()
+            temp_row.append("")
+            temp_row.append("")
+            temp_row.append("")
+            temp_row.append("")
+            user_row_temp= user_row.append(pd.Series(temp_row), ignore_index = True)
+            appendrowindf(user_xl, user_row_temp)
             return 404
         
         temp_row = list()
