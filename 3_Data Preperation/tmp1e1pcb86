@@ -16,19 +16,22 @@ def expandSponsors(df_spon):
     Returns expanded sponsor info """
     df_spon_exp = pd.DataFrame()
     for i,row in df_spon.iterrows():
+        
         df_spon_panel_temp = pd.DataFrame()
-        if (pd.notna(row['sponsorshipsAsMaintainer_nodes_0122'])) and (len(ast.literal_eval(row['sponsorshipsAsMaintainer_nodes_0122'])) > 0):
-            for sub in ast.literal_eval(row['sponsorshipsAsMaintainer_nodes_0122']):
+        if (pd.notna(row['sponsorshipsAsMaintainer_nodes']) or len(ast.literal_eval(row['sponsorshipsAsMaintainer_nodes']['sponsor']))):
+            
+            for sub in ast.literal_eval(row['sponsorshipsAsMaintainer_nodes']):
 
                 if sub['sponsor']:
                     spon_login = dict(sub['sponsor'])['login']
                 else:
-
+                    print(df_spon_exp)
                     spon_login = ""
                 df_spon_panel_temp =  row[['login','sponsorsListing_createdAt','stack ID']].to_frame().T
                 df_spon_panel_temp.reset_index(drop=True, inplace=True)
                 df_spon_panel_temp = pd.concat([df_spon_panel_temp, pd.DataFrame([[sub['createdAt'],spon_login]], columns = ['sponsor_createdDate','sponsor_login'])], axis=1)
                 df_spon_exp = df_spon_exp.append(df_spon_panel_temp)
+                
         else:
             spon_login = ""
             df_spon_panel_temp =  row[['login','sponsorsListing_createdAt','stack ID']].to_frame().T
@@ -63,7 +66,8 @@ def MonthPanel(df_temp, login):
     sponsorsListing_2018yearmonth = df_temp['sponsorsListing_2018yearmonth'].unique().squeeze()
     sponsorsListing_createdAt = df_temp['sponsorsListing_createdAt'].unique().squeeze()
     stack_ID = df_temp['stack ID'].unique().squeeze()
-    print(stack_ID)
+
+    # print(stack_ID)
     df2 = pd.DataFrame({'month' : [i for i in range(1,49)]}) #2018 - 2021; 0-47
     df2['c_month'] = df2['month']%12
     df2['c_month'] = df2['c_month'].replace(0,12)
@@ -84,6 +88,8 @@ def MonthPanel(df_temp, login):
     df2['sponsorsListing_2018yearmonth'] = sponsorsListing_2018yearmonth
     df2['sponsorsListing_createdAt'] = sponsorsListing_createdAt
     df2['stack ID'] = stack_ID
+
+    
     
     df2['subs_added'] = df2['subs_added'].fillna(0)
     
@@ -94,30 +100,31 @@ def MonthPanel(df_temp, login):
 
 def main():
 
-    r_spon_xl = r"C:\Users\pmedappa\Dropbox\Research\GH-SO\GH-SO-Project\Data\CleanConsolidatedSponsors_SOMatchOnly_Sub0122_SOMatch3.xlsx"
-    w_spon_xl = r"C:\Users\pmedappa\Dropbox\Research\GH-SO\GH-SO-Project\Data\GH_Panel.xlsx"
-    w_spon_xl_mp = r"C:\Users\pmedappa\Dropbox\Research\GH-SO\GH-SO-Project\Data\GH_MonthPanel_0122.xlsx"
+    r_spon_xl = r'C:\Users\pmedappa\Dropbox\Research\GH-SO\GH-SO-Project\Data\Counterfactual\CleanConsolidatedSponsors_india_DirtyCounterfactual_SOMatch_confirm_data_test.xlsx'
+
+    w_spon_xl = r"C:\Users\pmedappa\Dropbox\Research\GH-SO\GH-SO-Project\Data\Counterfactual\GH_Panel_CF_india.xlsx"
+    w_spon_xl_mp = r"C:\Users\pmedappa\Dropbox\Research\GH-SO\GH-SO-Project\Data\Counterfactual\GH_MonthPanel_CF_india.xlsx"
     
     
     df_spon = pd.read_excel(r_spon_xl,header= 0)
+    
     df_spon_panel = pd.DataFrame()
     df_spon_panel.to_excel(w_spon_xl, index = False) 
-    df_spon = df_spon.replace('DELETED',np.nan)
-
+    
     df_spon_exp = expandSponsors(df_spon)
     df_spon_exp.to_excel(w_spon_xl , index = False)
     df_spon_panel = createPanel(df_spon_exp)
     
     login_ids = df_spon_panel.login.unique()
-
+    
+    print("Total login ids : ", len(login_ids))
     df_month_panel = pd.DataFrame()
     for login in login_ids:
         print(login)
         df_temp = df_spon_panel[df_spon_panel['login']== login]
         df_month_temp = MonthPanel(df_temp, login )
         df_month_panel = df_month_panel.append(df_month_temp,  ignore_index = True)
-    
-    print("Total login ids : ", len(login_ids))    
+        
     df_month_panel.to_excel(w_spon_xl_mp , index = False)
    
     

@@ -10,7 +10,7 @@ if r"C:\Users\pmedappa\Dropbox\Code\CustomLib\PooLib" not in sys.path:
 from poo_ghmodules import gettoken
 
 def csv_input():
-	df = pd.read_excel(r'C:\Users\pmedappa\Dropbox\Research\GH-SO\GH-SO-Project\Data\Counterfactual\CleanUserSponsor_india_DirtyCounterfactual.xlsx')
+	df = pd.read_excel(r'C:\Users\pmedappa\Dropbox\Research\GH-SO\GH-SO-Project\Data\Counterfactual\CleanConsolidatedSponsors_India_DirtyCounterfactual_SOMatch_filter.xlsx')
 	users = df.login
 	return users
 
@@ -60,7 +60,7 @@ def search_sid(subsets, gurl, company):
 			response = requests.get(url)
 			soup = BeautifulSoup(response.text, 'lxml')
 			links = soup.select('a.url')
-			print("***************",links)            
+			print("***************",links) 
 			if links:
 				links = [link['href'] for link in links]
 				print(profile_link, ":::", links)
@@ -84,11 +84,11 @@ def main():
 			# gurl = github_url(client, user)
 			github_url = 'https://github.com/' + user
 			company = company_url(client, user)
-			if fname:
-				fname = fname.strip().split(' ')
-				subsets = all_subsets(fname)
-			else:
-				subsets = []
+# 			if fname:
+# 				fname = fname.strip().split(' ')
+# 				subsets = all_subsets(fname)
+# 			else:
+			subsets = []
 			subsets.insert(0, user)
 			stack_id = search_sid(subsets, github_url, company)
 			all_ids.append(stack_id)

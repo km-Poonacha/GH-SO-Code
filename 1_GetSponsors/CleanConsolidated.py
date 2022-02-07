@@ -7,10 +7,10 @@ Created on Sat Mar 14 11:58:14 2020
 import pandas as pd
 import ast
 
-consolidate_sponsors = r'C:\\Users\pmedappa\Dropbox\Course and Research Sharing\Research\MS Acquire Github\Data\Sponsor\ConsolidatedSponsors_full2.xlsx'       
-new_consolidate_sponsors = r'C:\\Users\pmedappa\Dropbox\Course and Research Sharing\Research\MS Acquire Github\Data\Sponsor\CleanConsolidatedSponsors.xlsx'       
+consolidate_sponsors = r'C:\Users\pmedappa\Dropbox\Research\GH-SO\GH-SO-Project\Data\Counterfactual\UserSponsor_turkey_DirtyCounterfactual.xlsx'       
+new_consolidate_sponsors = r'C:\Users\pmedappa\Dropbox\Research\GH-SO\GH-SO-Project\Data\Counterfactual\CleanUserSponsor_turkey_DirtyCounterfactual.xlsx'       
 
-df = pd.read_excel(consolidate_sponsors,error_bad_lines=False,header= 0, index = False)
+df = pd.read_excel(consolidate_sponsors,header= 0)
 print(df.shape)
 df = df.drop_duplicates(subset = [0])
 print(df.shape)

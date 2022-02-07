@@ -17,8 +17,8 @@ def expandSponsors(df_spon):
     df_spon_exp = pd.DataFrame()
     for i,row in df_spon.iterrows():
         df_spon_panel_temp = pd.DataFrame()
-        if (pd.notna(row['sponsorshipsAsMaintainer_nodes_0122'])) and (len(ast.literal_eval(row['sponsorshipsAsMaintainer_nodes_0122'])) > 0):
-            for sub in ast.literal_eval(row['sponsorshipsAsMaintainer_nodes_0122']):
+        if (pd.notna(row['sponsorshipsAsMaintainer_nodes_12_2_21'])) and (len(ast.literal_eval(row['sponsorshipsAsMaintainer_nodes_12_2_21'])) > 0):
+            for sub in ast.literal_eval(row['sponsorshipsAsMaintainer_nodes_12_2_21']):
 
                 if sub['sponsor']:
                     spon_login = dict(sub['sponsor'])['login']
@@ -94,30 +94,28 @@ def MonthPanel(df_temp, login):
 
 def main():
 
-    r_spon_xl = r"C:\Users\pmedappa\Dropbox\Research\GH-SO\GH-SO-Project\Data\CleanConsolidatedSponsors_SOMatchOnly_Sub0122_SOMatch3.xlsx"
-    w_spon_xl = r"C:\Users\pmedappa\Dropbox\Research\GH-SO\GH-SO-Project\Data\GH_Panel.xlsx"
-    w_spon_xl_mp = r"C:\Users\pmedappa\Dropbox\Research\GH-SO\GH-SO-Project\Data\GH_MonthPanel_0122.xlsx"
+    r_spon_xl = r"C:\Users\pmedappa\Dropbox\Data\Sponsors\CleanConsolidatedSponsors_SOMatchOnly_Sub1221_2_SOMatch_dropdeleted.xlsx"
+    w_spon_xl = r"C:\Users\pmedappa\Dropbox\Data\Sponsors\GH_Panel.xlsx"
+    w_spon_xl_mp = r"C:\Users\pmedappa\Dropbox\Data\Sponsors\GH_MonthPanel_2.xlsx"
     
     
     df_spon = pd.read_excel(r_spon_xl,header= 0)
     df_spon_panel = pd.DataFrame()
     df_spon_panel.to_excel(w_spon_xl, index = False) 
-    df_spon = df_spon.replace('DELETED',np.nan)
-
+    
     df_spon_exp = expandSponsors(df_spon)
     df_spon_exp.to_excel(w_spon_xl , index = False)
     df_spon_panel = createPanel(df_spon_exp)
     
     login_ids = df_spon_panel.login.unique()
-
+    print("Total login ids : ", len(login_ids))
     df_month_panel = pd.DataFrame()
     for login in login_ids:
         print(login)
         df_temp = df_spon_panel[df_spon_panel['login']== login]
         df_month_temp = MonthPanel(df_temp, login )
         df_month_panel = df_month_panel.append(df_month_temp,  ignore_index = True)
-    
-    print("Total login ids : ", len(login_ids))    
+        
     df_month_panel.to_excel(w_spon_xl_mp , index = False)
    
     

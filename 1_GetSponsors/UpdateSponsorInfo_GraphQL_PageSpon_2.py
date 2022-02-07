@@ -44,25 +44,61 @@ def run_query(user_row,user_xl):
     """ A simple function to use requests.post to make the API call. Note the json= section."""
     TOKEN = gettoken(r"C:\Users\pmedappa\Dropbox\Code\PW\GHtoken.txt")
     headers = {"Authorization": "Bearer "+ TOKEN } 
+    end = False
     query = """ 
     query {
           user(login: \""""+str(user_row["login"])+"""\") {
-            sponsorshipsAsMaintainer(first: 100) {
-              totalCount
-              pageInfo {
-                  hasNextPage
-                  startCursor
-                  endCursor
+                email
+                location
+                isHireable
+                followers {
+                  totalCount
+                }
+                following {
+                  totalCount
+                }
+                repositories {
+                  totalCount
+                }
+                sponsorsListing {
+                  createdAt
+                  shortDescription
+                  name
+                  tiers(first: 100) {
+                    totalCount
+                    edges {
+                      node {
+                        name
+                        description
+                        monthlyPriceInDollars
+                        updatedAt
+                      }
+                    }
                   }
-            }
+                }
+                sponsorshipsAsMaintainer(first: 100) {
+                  totalCount
+                  pageInfo {
+                      hasNextPage
+                      startCursor
+                      endCursor
+                      }
+    
+                  nodes {
+                    createdAt
+                    sponsor {
+                      login
+                    }
+                  }
+                }
           }
         }"""    
     try:
         request = requests.post('https://api.github.com/graphql', json={'query':query}, headers=headers)
         req_json = request.json()
-        endc = req_json['data']['user']['sponsorshipsAsMaintainer']['pageInfo']['startCursor']
+        # endc = req_json['data']['user']['sponsorshipsAsMaintainer']['pageInfo']['startCursor']
         print(req_json['data']['user']['sponsorshipsAsMaintainer']['totalCount'])
-        print(endc)
+        # print(endc)
     except:
         print("Error getting starting cursor")
         print(req_json)
@@ -75,15 +111,17 @@ def run_query(user_row,user_xl):
         temp_row.append("DELETED")
         temp_row.append("DELETED")
         temp_row.append("DELETED")
-        user_row_temp= user_row.append(pd.Series(temp_row), ignore_index = True)
+        temp_row.append("DELETED")
+        user_row_temp= user_row[['login','stack ID','stack url']].append(pd.Series(temp_row), ignore_index = True)
         appendrowindf(user_xl, user_row_temp) 
         return 404
-    
-    end = False
+    parse_query_response(req_json,user_row,user_xl)
+    if req_json['data']['user']['sponsorshipsAsMaintainer']['pageInfo']['hasNextPage']:     
+        endc = req_json['data']['user']['sponsorshipsAsMaintainer']['pageInfo']['endCursor']
+    else:
+        end = True
 
     while not end:
-        
-
         query = """
             query($cursor:String!){
               rateLimit {
@@ -164,28 +202,14 @@ def run_query(user_row,user_xl):
             temp_row.append("")
             temp_row.append("")
             temp_row.append("")
-            user_row_temp= user_row.append(pd.Series(temp_row), ignore_index = True)
+            temp_row.append("")
+            user_row_temp= user_row[['login','stack ID','stack url']].append(pd.Series(temp_row), ignore_index = True)
             appendrowindf(user_xl, user_row_temp)
             return 404
         
-        temp_row = list()
-        try:         
-            sponsorl = req_json['data']['user']['sponsorsListing']            
-            temp_row.append(sponsorl['tiers']['totalCount'])
-            temp_row.append(sponsorl['tiers']['edges'])
-        except: 
-            temp_row.append("")
-            temp_row.append("")
+
+        parse_query_response(req_json,user_row,user_xl)
         
-        try:
-            sponsorasm = req_json['data']['user']['sponsorshipsAsMaintainer']
-            temp_row.append(sponsorasm['totalCount'])
-            temp_row.append(sponsorasm ['nodes'])
-        except:
-            temp_row.append("")
-            temp_row.append("")
-        user_row_temp= user_row.append(pd.Series(temp_row), ignore_index = True)
-        appendrowindf(user_xl, user_row_temp)  
         if req_json['data']['user']['sponsorshipsAsMaintainer']['pageInfo']['hasNextPage']:     
             endc = req_json['data']['user']['sponsorshipsAsMaintainer']['pageInfo']['endCursor']
         else:
@@ -193,6 +217,45 @@ def run_query(user_row,user_xl):
 
     return 0
 
+def parse_query_response(req_json,user_row,user_xl):
+    temp_row = list()
+        
+    try:
+        userdetails =  req_json['data']['user']
+        temp_row.append(userdetails['isHireable'])
+        temp_row.append(userdetails['followers']['totalCount'])
+        temp_row.append(userdetails['following']['totalCount'])
+        temp_row.append(userdetails['repositories']['totalCount'])
+    except: 
+        temp_row.append("")
+        temp_row.append("") 
+        temp_row.append("")
+        temp_row.append("")             
+        
+        
+    try:         
+        sponsorl = req_json['data']['user']['sponsorsListing']
+        temp_row.append(sponsorl['createdAt'])            
+        temp_row.append(sponsorl['tiers']['totalCount'])
+        temp_row.append(sponsorl['tiers']['edges'])
+    except: 
+        temp_row.append("")
+        temp_row.append("")
+        temp_row.append("") 
+    
+    try:
+        sponsorasm = req_json['data']['user']['sponsorshipsAsMaintainer']
+        
+        temp_row.append(sponsorasm['totalCount'])
+        temp_row.append(sponsorasm ['nodes'])
+        print("Collected ",len(sponsorasm ['nodes']))
+    except:
+        
+        temp_row.append("")
+        temp_row.append("")
+    user_row_temp= user_row[['login','stack ID','stack url']].append(pd.Series(temp_row), ignore_index = True)
+    appendrowindf(user_xl, user_row_temp)  
+    
 def collapse_sponsors(user_df):
       user_df = user_df.groupby(['login'])['sponsorshipsAsMaintainer_nodes_12_2_21'].apply(list).reset_index()
       user_df['Sponsor_Check'] = user_df['sponsorshipsAsMaintainer_nodes_12_2_21'].apply(len)
@@ -203,16 +266,16 @@ def main():
     global DF_REPO 
     global DF_COUNT
     r_user_xl = r'C:\Users\pmedappa\Dropbox\Data\Sponsors\CleanConsolidatedSponsors_SOMatchOnly_Sub0121_SOMatch.xlsx'
-    w_user_xl = r'C:\Users\pmedappa\Dropbox\Data\Sponsors\CleanConsolidatedSponsors_SOMatchOnly_Sub0122_SOMatch.xlsx'
+    w_user_xl = r'C:\Users\pmedappa\Dropbox\Data\Sponsors\CleanConsolidatedSponsors_SOMatchOnly_Sub0122_SOMatch3.xlsx'
     user_df = pd.read_excel(r_user_xl,header= 0)
     df_test = pd.DataFrame()
     df_test.to_excel(w_user_xl, index = False) 
-    col = user_df.columns
-    col = col.append(pd.Index(["sponsorsListing_tiers_totalCount_0122","sponsorsListing_tiers_edges_0122","sponsorshipsAsMaintainer_totalCount_0122","sponsorshipsAsMaintainer_nodes_0122"]))
+    # col = user_df.columns
+    col = pd.Index(["login",'stack ID','stack url','isHireable_0122','followers_0122','following_0122','repositories_0122',"sponsorsListing_createdAt","sponsorsListing_tiers_totalCount_0122","sponsorsListing_tiers_edges_0122","sponsorshipsAsMaintainer_totalCount_0122","sponsorshipsAsMaintainer_nodes_0122"])
 
-    user_df = collapse_sponsors(user_df)
-    user_df.to_excel(w_user_xl, index = False) 
-    return
+    # user_df = collapse_sponsors(user_df)
+    # user_df.to_excel(w_user_xl, index = False) 
+    # return
     for i,row in user_df.iterrows():
         print(row['login'])
         run_query(row,w_user_xl)
